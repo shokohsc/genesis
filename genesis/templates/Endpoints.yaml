@@ -1,0 +1,32 @@
+{{- if .Values.Endpoints }}
+
+{{- $release_namespace := .Release.namespace }}
+{{- $labels := include "<CHARTNAME>.labels" . }}
+
+{{- range $endpoints := .Values.Endpoints }}
+{{- with $endpoints }}
+
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ .name }}
+  namespace: {{ $release_namespace }}
+  
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ $labels | indent 4 }}
+  {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+{{- with .subsets }}
+subsets:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
