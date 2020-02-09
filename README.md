@@ -2,8 +2,16 @@
 
 ## Creating a Chart
 ​
-To create a new chart with `genesis` as the starter chart, `genesis` needs to 
-be present in the user's `~/Library/helm/starters/` directory. This is a one time 
+To start creating new charts with `genesis` as the starter chart, `genesis` needs to 
+be present in the user's `$XDG_DATA_HOME/helm/starters/` directory. From the docs:
+
+> Currently the only way to add a chart to `$XDG_DATA_HOME/helm/starters` is to
+manually copy it there.
+
+- For Mac Users: `$XDG_DATA_HOME/helm/starters` -> `~/Library/helm/starters/`
+- For Linux Users: 
+
+This is a one time 
 setup. To do this, run the following commands:
 ​
 
