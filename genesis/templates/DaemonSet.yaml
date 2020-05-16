@@ -1,0 +1,54 @@
+{{- if .Values.DaemonSet }}
+
+{{- $release_namespace := .Release.namespace }}
+{{- $labels := include "<CHARTNAME>.labels" . }}
+
+{{- with .Values.DaemonSet }}
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .name }}
+  namespace: {{ $release_namespace }}
+  
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ $labels | indent 4 }}
+  {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+spec:
+  minReadySeconds: {{ default 0 .minReadySeconds }}
+  revisionHistoryLimit: {{ default 10 .revisionHistoryLimit }}
+  
+  {{- with .updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+{{ $labels | indent 6 }}
+      {{- with .labels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+
+  {{- with .template }}
+  template:
+    metadata:
+      labels:
+{{ $labels | indent 8 }}
+        {{- with .labels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+
+    spec:
+    {{- include "pod" . | nindent 6 }}
+            
+  {{- end }}
+{{- end }}
+{{- end }}

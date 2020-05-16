@@ -1,0 +1,59 @@
+{{- if .Values.StatefulSet }}
+
+{{- $release_namespace := .Release.namespace }}
+{{- $labels := include "demo.labels" . }}
+
+{{- with .Values.StatefulSet }}
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .name }}
+  namespace: {{ $release_namespace }}
+  
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ $labels | indent 4 }}
+  {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+spec:
+  replicas: {{ default 1 .replicas }}
+  podManagementPolicy: {{ .podManagementPolicy | default "OrderedReady" | quote }}
+  revisionHistoryLimit: {{ default 10 .revisionHistoryLimit }}
+  serviceName: {{ required "serviceName is required" .serviceName }}
+  
+  {{- with .updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+{{ $labels | indent 6 }}
+      {{- with .labels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+
+  {{- with .template }}
+  template:
+    metadata:
+      labels:
+{{ $labels | indent 8 }}
+        {{- with .labels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+
+    spec:
+    {{- include "pod" . | nindent 6 }}
+  
+  volumeClaimTemplates:
+  {{- include "volumeClaimTemplate" .volumeClaimTemplates | nindent 4 }}
+            
+  {{- end }}
+{{- end }}
+{{- end }}

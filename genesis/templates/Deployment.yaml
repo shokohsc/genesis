@@ -1,0 +1,69 @@
+{{- if .Values.Deployment }}
+
+{{- $release_namespace := .Release.Namespace }}
+{{- $labels := include "<CHARTNAME>.labels" . }}
+{{- $configMapChecksum := .Values.ConfigMap | quote | sha256sum }}
+
+{{- with .Values.Deployment }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ required ".Deployment.name is required" .name }}
+  namespace: {{ $release_namespace }}
+  
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ $labels | indent 4 }}
+  {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+spec:
+  replicas: {{ required "No. of replicas are required" .replicas }}
+  revisionHistoryLimit: {{ default 10 .revisionHistoryLimit }}
+
+  {{- if .minReadySeconds }}
+  minReadySeconds: {{ .minReadySeconds | quote }}
+  {{- end }}
+
+  {{- if .progressDeadlineSeconds }}
+  progressDeadlineSeconds: {{ .progressDeadlineSeconds | quote }}
+  {{- end }}
+
+  {{- if .paused }}
+  paused: {{ .paused | quote }}
+  {{- end }}
+  
+  {{- with .strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+{{ $labels | indent 6 }}
+      {{- with .labels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+
+  {{- with .template }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ $configMapChecksum }}
+      labels:
+{{ $labels | indent 8 }}
+        {{- with .labels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+
+    spec:
+    {{- include "pod" . | nindent 6 }}
+            
+  {{- end }}
+{{- end }}
+{{- end }}

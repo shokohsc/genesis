@@ -1,0 +1,61 @@
+{{- if .Values.Job }}
+
+{{- $release_namespace := .Release.namespace }}
+{{- $labels := include "demo.labels" . }}
+
+{{- with .Values.Job }}
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .name }}
+  namespace: {{ $release_namespace }}
+
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ $labels | indent 4 }}
+  {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+spec:
+  backoffLimit: {{ default 6 .backoffLimit }}
+
+  {{- if .activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ .activeDeadlineSeconds | quote }}
+  {{- end }}
+
+  {{- if .completions }}
+  completions: {{ .completions | quote }}
+  {{- end }}
+
+  {{- if .manualSelector }}
+  manualSelector: {{ .manualSelector | quote }}
+  {{- end }}
+
+  {{- if .parallelism }}
+  parallelism: {{ .parallelism | quote }}
+  {{- end }}
+
+  {{- if .ttlSecondsAfterFinished }}
+  ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished | quote }}
+  {{- end }}
+
+  {{- with .template }}
+  template:
+    metadata:
+      labels:
+{{ $labels | indent 8 }}
+        {{- with .labels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+
+    spec:
+    {{- include "pod" . | nindent 6 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

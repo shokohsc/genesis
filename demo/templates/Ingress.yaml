@@ -1,0 +1,47 @@
+{{- if .Values.Ingress }}
+
+{{- $release_namespace := .Release.namespace }}
+{{- $labels := include "demo.labels" . }}
+
+{{- with .Values.Ingress }}
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .name }}
+  namespace: {{ $release_namespace }}
+
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ $labels | indent 4 }}
+  {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+spec:
+  {{- with .backend }}
+  backend:
+    {{- if .serviceName }}
+    serviceName: {{ .serviceName }}
+    {{- end }}
+
+    {{- if .servicePort }}
+    servicePort: {{ .servicePort }}
+    {{- end }}
+  {{- end }}
+
+  {{- with .rules }}
+  rules: 
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  
+  {{- with .tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+{{- end }}
+{{- end }}

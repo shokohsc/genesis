@@ -1,0 +1,530 @@
+# Default values for demo.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+ConfigMap:
+  name: custom-config
+  data:
+    key1: value1
+    key2: value2
+  binaryData:
+    key3: base64_encoded_value
+
+
+PersistentVolumeClaim: [
+  {
+    name: myclaim,
+    accessModes: [
+      ReadWriteOnce
+    ],
+    volumeMode: Filesystem,
+    resources: {
+      requests: {
+        storage: 8Gi
+      }
+    },   
+    storageClassName: slow,
+    selector: {
+      matchLabels: {
+        release: "stable"
+      },
+      matchExpressions: [
+        {
+          key: environment,
+          operator: In,
+          values: [
+            dev
+          ]
+        }
+      ]
+    },
+    dataSource: {
+      name: new-snapshot-test,
+      kind: VolumeSnapshot,
+      apiGroup: snapshot.storage.k8s.io
+    }
+  }
+]
+
+
+StorageClass: [
+  {
+    name: standard,
+    reclaimPolicy: Retain,
+    provisioner: kubernetes.io/gce-pd,
+    parameters: {
+      type: pd-standard
+    },
+    volumeBindingMode: WaitForFirstConsumer,
+    mountOptions: [
+      dir_mode=0777,
+      file_mode=0777,
+      uid=1000,
+      gid=1000
+    ],
+    allowedTopologies: [
+      {
+        matchLabelExpressions: [
+          {
+            key: failure-domain.beta.kubernetes.io/zone,
+            values: [
+              us-central1-a,
+              us-central1-b
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
+  
+
+Ingress:
+  name: name-virtual-host-ingress
+  rules:
+  - host: first.bar.com
+    http:
+      paths:
+      - backend:
+          serviceName: service1
+          servicePort: 80
+  - host: second.foo.com
+    http:
+      paths:
+      - backend:
+          serviceName: service2
+          servicePort: 80
+  - http:
+      paths:
+      - backend:
+          serviceName: service3
+          servicePort: 80
+  tls:
+  - hosts:
+    - sslexample.foo.com
+    secretName: testsecret-tls
+  
+Service: [
+  {
+    name: my-service,
+    annotations: {
+      cloud.google.com/load-balancer-type: "Internal"
+    },
+    selector: {
+      app: MyApp
+    },
+    clusterIP: 10.0.171.239,
+    loadBalancerIP: 78.11.24.19,
+    type: LoadBalancer,
+    ports: [
+      {
+        name: http,
+        protocol: TCP,
+        port: 80,
+        targetPort: 9376
+      },
+      {
+        name: https,
+        protocol: TCP,
+        port: 443,
+        targetPort: 9377
+      }
+    ],
+    externalIPs: [
+      80.11.12.10
+    ]
+  },
+  {
+    name: my-service-b,
+    type: ClusterIP,
+    ports: [
+      {
+        name: http,
+        protocol: TCP,
+        port: 80,
+        targetPort: 8080
+      }
+    ]
+  }
+]
+  
+
+
+Deployment:
+  name: test-deployment
+  replicas: 3
+  template:
+    terminationGracePeriodSeconds: 60
+    volumes: [
+      {
+        name: testPVC,
+        configMap: {
+          name: config
+        }
+      }
+    ]
+    initContainers: [
+      {
+        name: test-container,
+        image: {
+          repository: ubuntu,
+          tag: 18.04
+        },
+        imagePullPolicy: Always,
+        command: [
+          java,
+          -jar
+        ],
+        args: [
+          myjar.jar
+        ],
+        resources: {
+          requests: {
+            cpu: 100m,
+            memory: 100Mi
+          },
+          limits: {
+            cpu: 200m,
+            memory: 200Mi
+          }
+        }
+      }
+    ]
+    containers: [
+      {
+        name: test-container,
+        image: {
+          repository: ubuntu,
+          tag: 18.04
+        },
+        imagePullPolicy: Always,
+        command: [
+          java,
+          -jar
+        ],
+        args: [
+          myjar.jar
+        ],
+        ports: [
+          {
+            name: http,
+            port: 80
+          },
+          {
+            name: health,
+            port: 8080
+          }
+        ],
+        env: [
+          {
+            name: test,
+            value: env
+          }
+        ],
+        envFrom: [
+          {
+            configMapRef: {
+              name: config
+            }
+          },
+          {
+            secretRef: {
+              name: secret-name
+            }
+          }
+        ],
+        volumeMounts: [
+          {
+            name: testPVC,
+            mountPath: /config/application.properties,
+            subPath: application.properties
+          }
+        ],
+        resources: {
+          requests: {
+            cpu: 100m,
+            memory: 100Mi
+          },
+          limits: {
+            cpu: 200m,
+            memory: 200Mi
+          }
+        }
+      },
+      {
+        name: test-container,
+        image: {
+          repository: ubuntu,
+          tag: 18.04
+        },
+        imagePullPolicy: Always,
+        command: [
+          java,
+          -jar
+        ],
+        args: [
+          myjar.jar
+        ],
+        ports: [
+          {
+            name: http,
+            port: 80
+          },
+          {
+            name: health,
+            port: 8080
+          }
+        ],
+        env: [
+          {
+            name: test,
+            value: env
+          }
+        ],
+        envFrom: [
+          {
+            configMapRef: {
+              name: config
+            }
+          },
+          {
+            secretRef: {
+              name: secret-name
+            }
+          }
+        ],
+        volumeMounts: [
+          {
+            name: testPVC,
+            mountPath: /config/application.properties,
+            subPath: application.properties
+          }
+        ],
+        resources: {
+          requests: {
+            cpu: 100m,
+            memory: 100Mi
+          },
+          limits: {
+            cpu: 200m,
+            memory: 200Mi
+          }
+        }
+      }
+    ]
+      
+
+Job:
+  name: one-time-job
+  backoffLimit: 5
+  activeDeadlineSeconds: 100
+  template:
+    terminationGracePeriodSeconds: 60
+    containers: [
+      {
+        name: test-container,
+        image: {
+          repository: ubuntu,
+          tag: 18.04
+        },
+        imagePullPolicy: Always,
+        command: [
+          java,
+          -jar
+        ],
+        args: [
+          myjar.jar
+        ],
+        resources: {
+          requests: {
+            cpu: 100m,
+            memory: 100Mi
+          },
+          limits: {
+            cpu: 200m,
+            memory: 200Mi
+          }
+        }
+      }
+    ]
+
+Pod:
+  name: one-time-job
+  template:
+    terminationGracePeriodSeconds: 60
+    containers: [
+      {
+        name: test-container,
+        image: {
+          repository: ubuntu,
+          tag: 18.04
+        },
+        imagePullPolicy: Always,
+        command: [
+          java,
+          -jar
+        ],
+        args: [
+          myjar.jar
+        ],
+        resources: {
+          requests: {
+            cpu: 100m,
+            memory: 100Mi
+          },
+          limits: {
+            cpu: 200m,
+            memory: 200Mi
+          }
+        }
+      }
+    ]
+
+CronJob:
+  name: cronjob
+  schedule: "0 * * * *"
+  jobTemplate:
+    backoffLimit: 5
+    activeDeadlineSeconds: 100
+    template:
+      terminationGracePeriodSeconds: 60
+      containers: [
+        {
+          name: test-container,
+          image: {
+            repository: ubuntu,
+            tag: 18.04
+          },
+          imagePullPolicy: Always,
+          command: [
+            java,
+            -jar
+          ],
+          args: [
+            myjar.jar
+          ],
+          resources: {
+            requests: {
+              cpu: 100m,
+              memory: 100Mi
+            },
+            limits: {
+              cpu: 200m,
+              memory: 200Mi
+            }
+          }
+        }
+      ]
+
+StatefulSet:
+  name: web
+  serviceName: "nginx"
+  replicas: 14
+  template:
+    containers: [
+      {
+        name: nginx,
+        image: {
+          repository: k8s.gcr.io/nginx-slim,
+          tag: 0.8
+        },
+        ports: [
+          {
+            name: web,
+            containerPort: 80
+          }
+        ],
+        volumeMounts: [
+          {
+            name: www,
+            mountPath: /usr/share/nginx/html
+          }
+        ],
+        resources: {
+          requests: {
+            cpu: 100m,
+            memory: 100Mi
+          },
+          limits: {
+            cpu: 200m,
+            memory: 200Mi
+          }
+        }
+      }
+    ]
+    volumeClaimTemplates: [
+      {
+        name: www,
+        storageClassName: thin-disk,
+        accessModes: [ "ReadWriteOnce" ],
+        resources: {
+          requests: {
+            storage: 1Gi
+          }
+        }
+      }
+    ]
+ 
+Endpoints: [ 
+  {
+    name: test,
+    subsets: [
+      {
+        addresses: [
+            ip: 192.0.2.42
+        ],
+        ports: [
+            port: 9376
+        ]
+      }
+    ]
+  }
+]
+  
+  
+Secret: [
+  {
+    name: test,
+    type: Opaque,
+    data: {
+      KEY_1: b,
+      KEY_2: d
+    }
+  }
+]
+
+DaemonSet:
+  name: test
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 10%
+  template:
+    terminationGracePeriodSeconds: 60
+    containers: [
+      {
+        name: test-container,
+        image: {
+          repository: ubuntu,
+          tag: 18.04
+        },
+        imagePullPolicy: Always,
+        command: [
+          java,
+          -jar
+        ],
+        args: [
+          myjar.jar
+        ],
+        resources: {
+          requests: {
+            cpu: 100m,
+            memory: 100Mi
+          },
+          limits: {
+            cpu: 200m,
+            memory: 200Mi
+          }
+        }
+      }
+    ]

@@ -1,0 +1,77 @@
+{{- if .Values.CronJob }}
+
+{{- $release_namespace := .Release.namespace }}
+{{- $labels := include "demo.labels" . }}
+
+{{- with .Values.CronJob }}
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ .name }}
+  namespace: {{ $release_namespace }}
+
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ $labels | indent 4 }}
+  {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+spec:
+  schedule: {{ required "schedule is required" .schedule | quote }}
+  concurrencyPolicy: {{ .concurrencyPolicy | default "Allow" | quote }}
+  failedJobsHistoryLimit: {{ default 1 .failedJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ default 3 .successfulJobsHistoryLimit }}
+  suspend: {{ default false .suspend }}
+
+  {{- if .startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ .startingDeadlineSeconds | quote }}
+  {{- end }}
+
+  {{- with .jobTemplate }}
+  jobTemplate:
+    metadata:
+      labels:
+{{ $labels | indent 8 }}
+        {{- with .labels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+    
+    spec:
+      backoffLimit: {{ default 6 .backoffLimit }}
+
+      {{- if .activeDeadlineSeconds }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds | quote }}
+      {{- end }}
+
+      {{- if .completions }}
+      completions: {{ .completions | quote }}
+      {{- end }}
+
+      {{- if .manualSelector }}
+      manualSelector: {{ .manualSelector | quote }}
+      {{- end }}
+
+      {{- if .parallelism }}
+      parallelism: {{ .parallelism | quote }}
+      {{- end }}
+
+      {{- with .template }}
+      template:
+        metadata:
+          labels:
+{{ $labels | indent 12 }}
+            {{- with .labels }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+
+        spec:
+          {{- include "pod" . | nindent 10 }}
+      {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

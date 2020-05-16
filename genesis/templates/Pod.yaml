@@ -1,0 +1,30 @@
+{{- if .Values.Pod }}
+
+{{- $release_namespace := .Release.namespace }}
+{{- $labels := include "<CHARTNAME>.labels" . }}
+
+{{- with .Values.Pod }}
+
+apiVersion: v1
+kind: Pod
+
+metadata:
+  name: {{ .name }}
+  namespace: {{ $release_namespace }}
+
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ $labels | indent 4 }}
+  {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+{{- with .template }}
+spec:
+{{- include "pod" . | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,34 @@
+{{- if .Values.PersistentVolumeClaim }}
+
+{{- $release_namespace := .Release.namespace }}
+{{- $labels := include "demo.labels" . }}
+
+{{- range $pvc := .Values.PersistentVolumeClaim }}
+{{- with $pvc }}
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .name }}
+  namespace: {{ $release_namespace }}
+  
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+{{ $labels | indent 4 }}
+  {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+spec:
+  {{- with .selector }}
+  selector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- include "persistentVolumeClaimSpec" . | nindent 2 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
